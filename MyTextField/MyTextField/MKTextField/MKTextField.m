@@ -9,9 +9,10 @@
 #import "MKTextField.h"
 #define MK_Color(r,g,b) [UIColor colorWithRed:r/255.0 green:g/255.0 blue:b/255.0 alpha:1.0]
 const static CGFloat margin = 10.0f;
+const static CGFloat tableViewH = 100.0f;
 const static CGFloat animateDuration = 0.5f;
 
-@interface MKTextField ()<UITextFieldDelegate>
+@interface MKTextField ()<UITextFieldDelegate,UITableViewDataSource,UITableViewDelegate>
 @property(nonatomic,strong)UIView *line;
 @property(nonatomic,strong)UITextField *textField;
 /** 上浮的Label */
@@ -22,8 +23,15 @@ const static CGFloat animateDuration = 0.5f;
 @property(nonatomic,strong)UIImageView *leftImageView;
 /** textField右侧字数 */
 @property(nonatomic,strong)UILabel *numLable;
+/** 主窗口 */
+@property (nonatomic,strong)UIWindow *window;
+/** 表格视图 */
+@property (nonatomic,strong)UITableView *tableView;
 @end
-@implementation MKTextField
+@implementation MKTextField{
+    /** 历史数据 */
+    NSMutableArray *_dataArray;
+}
 +(instancetype)mkfieldWithFrame:(CGRect)frame
 {
     return [[self alloc] initWithFrame:frame];
@@ -34,6 +42,8 @@ const static CGFloat animateDuration = 0.5f;
         self.lineWarningColor = MK_Color(255, 0, 0);
         self.leftImageName = @"username_login";
         self.errarLabel.text = @"输入错误";
+        self.maxLength = 11;
+        [self initData];
         [self addSubview:self.line];
         [self addSubview:self.placeHolderLabel];
         [self addSubview:self.leftImageView];
@@ -43,14 +53,57 @@ const static CGFloat animateDuration = 0.5f;
     }
     return self;
 }
+-(void)deleteData
+{
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults removeObjectForKey:@"historyContent"];
+    NSLog(@"删除成功");
+}
+-(void)initData{
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSMutableDictionary *dic = [defaults objectForKey:@"historyContent"];
+    NSMutableArray *array = dic[@"historyContent"];
+    if (array) {
+        _dataArray = [array mutableCopy];
+    }
+}
+-(void)saveContent:(UITextField *)textField
+{
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSMutableDictionary *oldContent = [defaults objectForKey:@"historyContent"];
+    NSMutableDictionary *dic = [NSMutableDictionary dictionaryWithCapacity:0];
+    if (oldContent == nil) {
+        NSMutableArray *array = [NSMutableArray arrayWithObject:textField.text];
+        [dic setObject:array forKey:@"historyContent"];
+    }else{
+        NSMutableArray *allContent = oldContent[@"historyContent"];
+        NSMutableArray *all = [NSMutableArray arrayWithArray:allContent];//必需复制，不然会报错
+        if (textField.text !=nil && textField.text.length !=0) {
+            if (![all containsObject:textField.text]) {
+                [all insertObject:textField.text atIndex:0];
+                }
+        }
+        [dic setObject:all forKey:@"historyContent"];
+    }
+    [defaults setObject:dic forKey:@"historyContent"];
+    [defaults synchronize];
+}
 #pragma mark - UITextFieldDelegate
 -(void)textFieldDidBeginEditing:(UITextField *)textField
 {
     [self setPlaceHolderLabelHidden:NO];
+    if (_dataArray.count !=0) {
+        [self showTableView:CGRectGetMaxY(self.frame)];
+    }
 }
 -(void)textFieldDidEndEditing:(UITextField *)textField
 {
     [self setPlaceHolderLabelHidden:YES];
+    [self dismissTableView];
+    if (textField.text.length < self.maxLength) {
+        [self saveContent:textField];
+    }
+    [self initData];
 }
 -(void)textFieldEditingChanged:(UITextField *)sender
 {
@@ -74,6 +127,53 @@ const static CGFloat animateDuration = 0.5f;
         } completion:nil];
     }
     self.numLable.text = [NSString stringWithFormat:@"%zd/%zd",sender.text.length,self.maxLength];
+}
+#pragma mark - tableView
+-(void)showTableView:(CGFloat)y
+{
+    self.window = [UIApplication sharedApplication].keyWindow;
+    self.window.backgroundColor = [UIColor clearColor];
+    [self.window addSubview:self.tableView];
+    self.tableView.frame = CGRectMake(margin * 1.5, y, self.line.width, tableViewH);
+    [self.tableView reloadData];
+    
+    [UIView animateWithDuration:animateDuration animations:^{
+        self.tableView.alpha = 1.0;
+    }];
+}
+- (void)dismissTableView
+{
+    [UIView animateWithDuration:animateDuration animations:^{
+        self.tableView.alpha = 0.0;
+    } completion:^(BOOL finished) {
+        [self.tableView removeFromSuperview];
+        self.window = nil;
+    }];
+}
+#pragma mark - UITableViewDataSource\UITableViewDelegate
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return _dataArray.count;
+}
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    static NSString *ID = @"MKTextFieldCell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:ID];
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:ID];
+    }
+    cell.textLabel.font = [UIFont systemFontOfSize:14];
+    cell.textLabel.textColor = MK_Color(150,150,150);
+    cell.textLabel.text = _dataArray[indexPath.row];
+    return cell;
+}
+
+#pragma mark - UITableViewDelegate
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    self.textField.text = _dataArray[indexPath.row];
+    self.numLable.text = [NSString stringWithFormat:@"%zd/%zd",self.textField.text.length,self.maxLength];
+    [self dismissTableView];
 }
 #pragma mark - animate
 - (void)setPlaceHolderLabelHidden:(BOOL)isHidden
@@ -206,7 +306,23 @@ const static CGFloat animateDuration = 0.5f;
     if (!_numLable) {
         _numLable = [[UILabel alloc]init];
         _numLable.font = [UIFont systemFontOfSize:11];
+        _numLable.textColor = MK_Color(150,150,150);
     }
     return _numLable;
+}
+- (UITableView *)tableView
+{
+    if (!_tableView) {
+        _tableView = [[UITableView alloc]initWithFrame:CGRectZero style:UITableViewStylePlain];
+        _tableView.dataSource = self;
+        _tableView.delegate = self;
+        _tableView.rowHeight = 40.0f;
+        _tableView.alpha = 0.0f;
+        _tableView.layer.borderWidth = 1.0f;
+        _tableView.layer.borderColor = MK_Color(220, 220, 220).CGColor;
+        _tableView.layer.cornerRadius = 5.0f;
+        _tableView.tableFooterView = [UIView new];
+    }
+    return _tableView;
 }
 @end

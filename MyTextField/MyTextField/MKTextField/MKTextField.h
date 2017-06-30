@@ -14,10 +14,11 @@
 @property(nonatomic,copy)NSString *placeHolder;
 /** 左侧图标名称(有默认图片) */
 @property (nonatomic,copy) NSString *leftImageName;
-/** 最大字数(必填) */
+/** 字数 */
 @property (nonatomic,assign) NSInteger maxLength;
 /** 警告颜色(默认红色) */
 @property (nonatomic,strong) UIColor *lineWarningColor;
 
 +(instancetype)mkfieldWithFrame:(CGRect)frame;
+-(void)deleteData;
 @end

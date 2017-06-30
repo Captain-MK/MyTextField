@@ -18,7 +18,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    _mkfield = [MKTextField mkfieldWithFrame:CGRectMake(10, 50, 350, 100)];
+    _mkfield = [MKTextField mkfieldWithFrame:CGRectMake(10, 50, 350, 90)];
     _mkfield.maxLength = 11;
     _mkfield.placeHolder = @"请输入用户名";
     [self.view addSubview:_mkfield];
@@ -28,9 +28,4 @@
 {
     [self.view endEditing:YES];
 }
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-}
-
-
 @end
