@@ -20,5 +20,5 @@
 @property (nonatomic,strong) UIColor *lineWarningColor;
 
 +(instancetype)mkfieldWithFrame:(CGRect)frame;
--(void)deleteData;
+-(void)deleteAllData;
 @end

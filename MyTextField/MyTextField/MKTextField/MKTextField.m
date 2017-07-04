@@ -53,11 +53,25 @@ const static CGFloat animateDuration = 0.5f;
     }
     return self;
 }
--(void)deleteData
+-(void)deleteAllData
 {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults removeObjectForKey:@"historyContent"];
     NSLog(@"删除成功");
+}
+-(void)deleteData:(NSInteger)index
+{
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSMutableDictionary *dic = [defaults objectForKey:@"historyContent"];
+    NSMutableArray *array = dic[@"historyContent"];
+    if (array) {
+        NSMutableArray *all = [NSMutableArray arrayWithArray:array];//必需复制，不然会报错
+        [all removeObjectAtIndex:index];
+        NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+        [dict setObject:all forKey:@"historyContent"];
+        [defaults setObject:dict forKey:@"historyContent"];
+        _dataArray = [all mutableCopy];
+    }
 }
 -(void)initData{
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
@@ -174,6 +188,20 @@ const static CGFloat animateDuration = 0.5f;
     self.textField.text = _dataArray[indexPath.row];
     self.numLable.text = [NSString stringWithFormat:@"%zd/%zd",self.textField.text.length,self.maxLength];
     [self dismissTableView];
+}
+- (nullable NSArray<UITableViewRowAction *> *)tableView:(UITableView *)tableView editActionsForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    UITableViewRowAction *action = [UITableViewRowAction rowActionWithStyle:UITableViewRowActionStyleDefault title:@"删除" handler:^(UITableViewRowAction * _Nonnull action, NSIndexPath * _Nonnull indexPath) {
+        [_dataArray removeObjectAtIndex:indexPath.row];
+        [tableView reloadData];
+        [self deleteData:indexPath.row];
+    }];
+    NSArray *arr = @[action];
+    return arr;
+}
+-(BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return YES;
 }
 #pragma mark - animate
 - (void)setPlaceHolderLabelHidden:(BOOL)isHidden
