@@ -8,6 +8,7 @@
 
 #import "MKTextField.h"
 #define MK_Color(r,g,b) [UIColor colorWithRed:r/255.0 green:g/255.0 blue:b/255.0 alpha:1.0]
+#define NSUserDefaultsKey @"HistoryList"
 const static CGFloat margin = 10.0f;
 const static CGFloat tableViewH = 100.0f;
 const static CGFloat animateDuration = 0.5f;
@@ -56,27 +57,27 @@ const static CGFloat animateDuration = 0.5f;
 -(void)deleteAllData
 {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    [defaults removeObjectForKey:@"historyContent"];
+    [defaults removeObjectForKey:NSUserDefaultsKey];
     NSLog(@"删除成功");
 }
 -(void)deleteData:(NSInteger)index
 {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    NSMutableDictionary *dic = [defaults objectForKey:@"historyContent"];
-    NSMutableArray *array = dic[@"historyContent"];
+    NSMutableDictionary *dic = [defaults objectForKey:NSUserDefaultsKey];
+    NSMutableArray *array = dic[NSUserDefaultsKey];
     if (array) {
         NSMutableArray *all = [NSMutableArray arrayWithArray:array];//必需复制，不然会报错
         [all removeObjectAtIndex:index];
         NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-        [dict setObject:all forKey:@"historyContent"];
-        [defaults setObject:dict forKey:@"historyContent"];
+        [dict setObject:all forKey:NSUserDefaultsKey];
+        [defaults setObject:dict forKey:NSUserDefaultsKey];
         _dataArray = [all mutableCopy];
     }
 }
 -(void)initData{
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    NSMutableDictionary *dic = [defaults objectForKey:@"historyContent"];
-    NSMutableArray *array = dic[@"historyContent"];
+    NSMutableDictionary *dic = [defaults objectForKey:NSUserDefaultsKey];
+    NSMutableArray *array = dic[NSUserDefaultsKey];
     if (array) {
         _dataArray = [array mutableCopy];
     }
@@ -84,22 +85,22 @@ const static CGFloat animateDuration = 0.5f;
 -(void)saveContent:(UITextField *)textField
 {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    NSMutableDictionary *oldContent = [defaults objectForKey:@"historyContent"];
+    NSMutableDictionary *oldContent = [defaults objectForKey:NSUserDefaultsKey];
     NSMutableDictionary *dic = [NSMutableDictionary dictionaryWithCapacity:0];
     if (oldContent == nil) {
         NSMutableArray *array = [NSMutableArray arrayWithObject:textField.text];
-        [dic setObject:array forKey:@"historyContent"];
+        [dic setObject:array forKey:NSUserDefaultsKey];
     }else{
-        NSMutableArray *allContent = oldContent[@"historyContent"];
+        NSMutableArray *allContent = oldContent[NSUserDefaultsKey];
         NSMutableArray *all = [NSMutableArray arrayWithArray:allContent];//必需复制，不然会报错
         if (textField.text !=nil && textField.text.length !=0) {
             if (![all containsObject:textField.text]) {
                 [all insertObject:textField.text atIndex:0];
                 }
         }
-        [dic setObject:all forKey:@"historyContent"];
+        [dic setObject:all forKey:NSUserDefaultsKey];
     }
-    [defaults setObject:dic forKey:@"historyContent"];
+    [defaults setObject:dic forKey:NSUserDefaultsKey];
     [defaults synchronize];
 }
 #pragma mark - UITextFieldDelegate
